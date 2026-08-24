@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AISE Authority OS</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- animated background -->
+<div id="bgfx">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+  <div class="grid"></div>
+</div>
+
+<!-- cinematic boot splash -->
+<div id="boot" class="boot">
+  <div class="boot-mark">
+    <div class="ring r1"></div>
+    <div class="ring r2"></div>
+    <div class="ring r3"></div>
+    <img src="logo.png" alt="" onerror="this.style.display='none';document.getElementById('bootCore').style.display='flex'">
+    <div id="bootCore" class="core" style="display:none">AI</div>
+  </div>
+  <h1><b>Authority OS</b></h1>
+  <div class="tag">AI Search Engineers . LinkedIn Content Engine</div>
+  <div class="progress"><i></i></div>
+  <div class="booting">Initializing</div>
+</div>
+
+<!-- login wall -->
+<div id="login" class="login-stage" style="display:none">
+  <div class="login-head">
+    <div class="logo">
+      <img src="logo.png" alt="" onerror="this.style.display='none';document.getElementById('loginMk').style.display='flex'">
+      <div id="loginMk" class="mk" style="display:none">AI</div>
+    </div>
+    <h1><b>Authority OS</b></h1>
+    <p>Choose your profile to continue</p>
+  </div>
+  <div id="profileGrid" class="profile-grid"></div>
+</div>
+
+<!-- credential overlay -->
+<div id="credOverlay" class="cred-overlay">
+  <div class="cred-card">
+    <button class="cred-back" onclick="closeCred()">&#8592;</button>
+    <div id="credAvatar" class="pavatar">--</div>
+    <h2 id="credName">--</h2>
+    <div class="desg" id="credDesg">--</div>
+    <div id="credErr" class="cred-err" style="display:none"></div>
+    <div class="field">
+      <label>Password</label>
+      <input id="credPass" type="password" autocomplete="current-password" placeholder="Enter password">
+    </div>
+    <button class="btn btn-primary" id="credBtn" onclick="submitCred()">Sign in</button>
+  </div>
+</div>
+
+<!-- enter transition -->
+<div id="enterFx" class="enter-fx">
+  <div class="scan"><div class="av" id="enterAv">--</div></div>
+  <div class="wel">Welcome back, <b id="enterName">--</b></div>
+  <div class="sub">Initializing your workspace</div>
+</div>
+
+<!-- app -->
+<div id="app" class="app" style="display:none">
+  <aside class="side">
+    <div class="brand">
+      <img src="logo.png" alt="" onerror="this.style.display='none';document.getElementById('brandMk').style.display='flex'">
+      <div id="brandMk" class="b-mk" style="display:none">AI</div>
+      <div>
+        <span class="b-tt">Authority OS</span>
+        <small>LinkedIn content engine</small>
+      </div>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="uAvatar">--</div>
+      <div>
+        <div class="nm" id="uName">--</div>
+        <div class="rl" id="uRole">--</div>
+      </div>
+    </div>
+    <div id="nav"></div>
+    <button class="logout" onclick="doLogout()">Log out</button>
+  </aside>
+  <main class="main">
+    <div class="topbar" id="topnav"></div>
+    <div class="wrap" id="content"></div>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

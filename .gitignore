@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment Variables & Secrets
+.env
+.env.*
+*.env
+!.env.example
+*.key
+*.pem
+
+# Build & Deployment Outputss
+dist/
+build/
+.netlify/
+.vercel/
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log

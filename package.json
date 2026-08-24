@@ -1,7 +1,7 @@
 {
   "name": "aise-authority-os",
   "version": "1.0.0",
-  "description": "AISE LinkedIn Authority OS. Four voice personalized LinkedIn content generators powered by Claude, backend key hidden on Netlify Functions.",
+  "description": "AISE LinkedIn Authority OS. Seven voice personalized LinkedIn content generators powered by Claude, backend key hidden on Netlify Functions.",
   "private": true,
   "engines": {
     "node": ">=18"

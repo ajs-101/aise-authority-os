@@ -6,7 +6,8 @@
 // weekly batches never repeat.
 // ============================================================
 
-const { PROFILES, COMPANIES, COMPLIANCE } = require("./profiles");
+const { PROFILES, COMPLIANCE } = require("./profiles");
+const { getCompany } = require("./utils/company");
 
 const ALLOWED_MODELS = {
   "claude-sonnet-4-6": "claude-sonnet-4-6",
@@ -192,7 +193,7 @@ exports.handler = async (event) => {
   if (!p) {
     return { statusCode: 400, body: JSON.stringify({ ok: false, error: "Unknown profile" }) };
   }
-  const company = COMPANIES[p.company];
+  const company = getCompany(p.company);
 
   req.funnel = req.funnel || "TOFU";
   req.tone = req.tone || "Professional";

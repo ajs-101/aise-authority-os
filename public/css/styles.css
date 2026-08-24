@@ -105,7 +105,7 @@ button{font-family:inherit;}
 .cred-card label{display:block;font-size:11px;color:var(--mut);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
 .cred-card input{width:100%;background:#020617;border:1px solid var(--line2);border-radius:11px;padding:12px 14px;color:var(--txt);font-size:15px;}
 .cred-card input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18);}
-.cred-err{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#fca5a5;font-size:12.5px;padding:9px 12px;border-radius:9px;margin-bottom:12px;text-align:left;}
+.cred-err{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#fca5a5;font-size:12.5px;padding:9px 12px;border-radius:99px;margin-bottom:12px;text-align:left;}
 .cred-back{position:absolute;top:14px;left:16px;background:none;border:none;color:var(--mut);font-size:18px;cursor:pointer;}
 .cred-back:hover{color:var(--txt);}
 

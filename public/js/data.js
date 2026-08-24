@@ -1,5 +1,5 @@
 // ============================================================
-// data.js  -  frontend display data only. NO passwords here.
+// js/data.js  -  frontend display data only. NO passwords here.
 // ============================================================
 
 window.UI = {

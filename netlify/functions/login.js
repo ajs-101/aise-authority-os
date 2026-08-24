@@ -5,10 +5,11 @@
 // to the browser.
 // ============================================================
 
-const { PROFILES, COMPANIES } = require("./profiles");
+const { PROFILES } = require("./profiles");
+const { getCompany } = require("./utils/company");
 
 function respond(personId, p) {
-  const company = COMPANIES[p.company];
+  const company = getCompany(p ? p.company : "");
   return {
     statusCode: 200,
     headers: { "content-type": "application/json" },
@@ -21,8 +22,8 @@ function respond(personId, p) {
       headline: p.headline,
       about: p.about,
       audience: p.audience,
-      companyName: company.name,
-      companyShort: company.short,
+      companyName: company ? company.name : "AI Search Engineers",
+      companyShort: company ? company.short : "AISE",
       sampleCount: (p.samples || []).length
     })
   };

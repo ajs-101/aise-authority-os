@@ -14,6 +14,7 @@ var TABS_BASE = [
   ["calendar", "Weekly Calendar", "\u25A6"],
   ["library", "Content Library", "\u2751"],
   ["compliance", "Compliance Check", "\u2713"],
+  ["profile-gap", "Profile Gap Analyzer", "\uD83D\uDD0E"],
   ["profile", "My Voice Profile", "\u25CE"],
 ];
 
@@ -115,6 +116,26 @@ var state = {
   imageMeta: null,
   imageAnalysis: null,
   imageAnalyzing: false,
+  profileGapText: "",
+  profileGapShotUrl: null,
+  profileGapAnalyzing: false,
+  profileGapResult: null,
+  profileGapFixes: {
+    headline: null,
+    about: null,
+    experience: null,
+    skills: null,
+    featured: null,
+    recommendations: null,
+  },
+  profileGapFixLoading: {
+    headline: false,
+    about: false,
+    experience: false,
+    skills: false,
+    featured: false,
+    recommendations: false,
+  },
 };
 
 var GEN_MSGS = [
@@ -822,6 +843,289 @@ function fallbackClientImageAnalysis(meta) {
   };
 }
 
+/* ---------------- profile gap analyzer ---------------- */
+function handleProfileGapFileSelect(evt) {
+  var file = evt.target.files ? evt.target.files[0] : null;
+  if (!file) return;
+  loadProfileGapScreenshot(file);
+}
+
+function loadProfileGapScreenshot(file) {
+  if (!file || file.type.indexOf("image/") !== 0) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    state.profileGapShotUrl = e.target.result;
+    render();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearProfileGapShot() {
+  state.profileGapShotUrl = null;
+  render();
+}
+
+function setupProfileGapDropAndPaste() {
+  var zone = $("profileGapDropzone");
+  if (zone && !zone._wired) {
+    zone._wired = true;
+    zone.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      zone.classList.add("dragover");
+    });
+    zone.addEventListener("dragleave", function () {
+      zone.classList.remove("dragover");
+    });
+    zone.addEventListener("drop", function (e) {
+      e.preventDefault();
+      zone.classList.remove("dragover");
+      var file =
+        e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+      if (file) loadProfileGapScreenshot(file);
+    });
+  }
+  if (!window._profileGapPasteWired) {
+    window._profileGapPasteWired = true;
+    document.addEventListener("paste", function (e) {
+      if (state.tab !== "profile-gap") return;
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf("image/") === 0) {
+          loadProfileGapScreenshot(items[i].getAsFile());
+          break;
+        }
+      }
+    });
+  }
+}
+
+function runProfileGapAnalysis() {
+  if (!state.profileGapText.trim() && !state.profileGapShotUrl) {
+    toast("Paste your profile text or add a screenshot first.");
+    return;
+  }
+  state.profileGapAnalyzing = true;
+  state.profileGapFixes = {
+    headline: null,
+    about: null,
+    experience: null,
+    skills: null,
+    featured: null,
+    recommendations: null,
+  };
+  render();
+
+  fetch("/.netlify/functions/profile-gap", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      type: "analyze",
+      profileText: state.profileGapText,
+      screenshotDataUrl: state.profileGapShotUrl,
+      personId: SESSION ? SESSION.personId : "ahmed",
+    }),
+  })
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (d) {
+      state.profileGapAnalyzing = false;
+      state.profileGapResult = d;
+      render();
+    })
+    .catch(function () {
+      state.profileGapAnalyzing = false;
+      state.profileGapResult = fallbackClientProfileAnalysis(
+        state.profileGapText,
+      );
+      render();
+    });
+}
+
+function fallbackClientProfileAnalysis(text) {
+  var t = (text || "").trim();
+  if (!t) {
+    return {
+      ok: false,
+      error: "Paste your profile text or add a screenshot first.",
+    };
+  }
+  var hasAbout = /\babout\b/i.test(t);
+  var hasSkills = /\bskills\b/i.test(t);
+  var hasExperience = /\bexperience\b/i.test(t);
+  var hasRecs = /\brecommendations\b/i.test(t);
+  var hasFeatured = /\bfeatured\b/i.test(t);
+
+  var missing = [];
+  if (!hasAbout)
+    missing.push({
+      section: "about",
+      label: "About section",
+      priority: "high",
+    });
+  if (!hasExperience)
+    missing.push({
+      section: "experience",
+      label: "Experience descriptions",
+      priority: "high",
+    });
+  if (!hasSkills)
+    missing.push({
+      section: "skills",
+      label: "Skills section",
+      priority: "high",
+    });
+  if (!hasRecs)
+    missing.push({
+      section: "recommendations",
+      label: "Recommendations",
+      priority: "medium",
+    });
+  if (!hasFeatured)
+    missing.push({
+      section: "featured",
+      label: "Featured section",
+      priority: "medium",
+    });
+
+  var overall = clampNum(
+    100 - missing.length * 12 - (t.length < 400 ? 20 : 0),
+    15,
+    90,
+  );
+  function sc(has) {
+    return has ? 6 : 0;
+  }
+
+  return {
+    ok: true,
+    overallScore: overall,
+    sectionScores: {
+      headline: 5,
+      about: sc(hasAbout),
+      experience: sc(hasExperience),
+      skills: sc(hasSkills),
+      featured: sc(hasFeatured),
+      recommendations: sc(hasRecs),
+    },
+    missing: missing,
+    needsImprovement: [
+      {
+        section: "general",
+        label: "This is an offline estimate",
+        detail:
+          "The backend could not be reached, so this is a rough estimate. Try again for a full section by section breakdown.",
+        priority: "low",
+      },
+    ],
+    strengths: [],
+    sectionsFound: [],
+    extracted: {},
+  };
+}
+
+function clampNum(n, lo, hi) {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function runProfileGapFix(kind) {
+  if (!state.profileGapText.trim()) {
+    toast("Paste your profile text first, then analyze it.");
+    return;
+  }
+  var typeMap = {
+    headline: "fixHeadline",
+    about: "fixAbout",
+    experience: "fixExperience",
+    skills: "fixSkills",
+    featured: "fixFeatured",
+    recommendations: "fixRecommendations",
+  };
+  var type = typeMap[kind];
+  if (!type) return;
+
+  state.profileGapFixLoading[kind] = true;
+  render();
+
+  fetch("/.netlify/functions/profile-gap", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      type: type,
+      profileText: state.profileGapText,
+      personId: SESSION ? SESSION.personId : "ahmed",
+    }),
+  })
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (d) {
+      state.profileGapFixLoading[kind] = false;
+      if (d && d.ok) {
+        state.profileGapFixes[kind] = d;
+      } else {
+        toast((d && d.error) || "Could not generate that right now.");
+      }
+      render();
+    })
+    .catch(function () {
+      state.profileGapFixLoading[kind] = false;
+      toast("Could not reach the server, try again.");
+      render();
+    });
+}
+
+function profileGapFixAsText(kind) {
+  var f = state.profileGapFixes[kind];
+  if (!f) return "";
+  if (kind === "headline" && f.headlines) return f.headlines.join("\n");
+  if (kind === "about" && f.about) return f.about;
+  if (kind === "experience" && f.experience) return f.experience;
+  if (kind === "skills" && f.skills) return f.skills.join(", ");
+  if (kind === "featured" && f.ideas) return f.ideas.join("\n");
+  if (kind === "recommendations" && f.whoToAsk) {
+    return f.whoToAsk.join("\n") + (f.howToAsk ? "\n\n" + f.howToAsk : "");
+  }
+  return "";
+}
+
+function copyProfileGapFix(kind) {
+  var t = profileGapFixAsText(kind);
+  if (!t) {
+    toast("Nothing to copy yet.");
+    return;
+  }
+  copyText(t);
+}
+
+function copyProfileGapAll() {
+  var labels = {
+    headline: "RECOMMENDED HEADLINES",
+    about: "ABOUT SECTION",
+    experience: "EXPERIENCE DESCRIPTIONS",
+    skills: "SUGGESTED SKILLS",
+    featured: "FEATURED IDEAS",
+    recommendations: "WHO TO ASK FOR A RECOMMENDATION",
+  };
+  var parts = [];
+  [
+    "headline",
+    "about",
+    "experience",
+    "skills",
+    "featured",
+    "recommendations",
+  ].forEach(function (kind) {
+    var t = profileGapFixAsText(kind);
+    if (t) parts.push(labels[kind] + "\n" + t);
+  });
+  if (!parts.length) {
+    toast("Nothing to copy yet.");
+    return;
+  }
+  copyText(parts.join("\n\n"));
+}
+
 /* ---------------- generation handlers ---------------- */
 function genSet(k, v) {
   state.gen[k] = v;
@@ -1425,6 +1729,7 @@ function render() {
     calendar: tCalendar,
     library: tLibrary,
     compliance: tCompliance,
+    "profile-gap": tProfileGap,
     profile: tProfile,
     settings: tSettings,
   };
@@ -1439,6 +1744,7 @@ function render() {
   });
   if (state.tab === "generate" && state.generating) startGenRotation();
   if (state.tab === "generate" && state.weekGen) updateWeekProgress();
+  if (state.tab === "profile-gap") setupProfileGapDropAndPaste();
   window.scrollTo(0, 0);
 }
 

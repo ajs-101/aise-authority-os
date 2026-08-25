@@ -956,6 +956,362 @@ function compAnalyticsHTML() {
   );
 }
 
+/* ---------------- PROFILE GAP ANALYZER ---------------- */
+var FIX_ACTIONS = {
+  headline: { label: "Generate 3 Better Headlines", icon: "✎" },
+  about: { label: "Rewrite My About Section", icon: "✎" },
+  experience: { label: "Improve Experience Description", icon: "✎" },
+  skills: { label: "Suggest Relevant Skills", icon: "✎" },
+  featured: { label: "Suggest Featured Content", icon: "✎" },
+  recommendations: {
+    label: "Suggest Who to Ask for Recommendations",
+    icon: "✎",
+  },
+};
+
+var SECTION_LABELS = {
+  headline: "Headline",
+  about: "About",
+  experience: "Experience",
+  skills: "Skills",
+  featured: "Featured",
+  recommendations: "Recommendations",
+  certifications: "Certifications",
+  general: "Profile",
+};
+
+function priorityMeta(p) {
+  if (p === "high") return { icon: "🔴", label: "High Priority", cls: "rd" };
+  if (p === "low") return { icon: "🟢", label: "Low Priority", cls: "em" };
+  return { icon: "🟡", label: "Medium Priority", cls: "am" };
+}
+
+function scoreTierClass(score, max) {
+  var pct = max ? score / max : 0;
+  if (pct >= 0.75) return "high";
+  if (pct >= 0.45) return "mid";
+  return "low";
+}
+
+function tProfileGap() {
+  var leftCol =
+    '<div class="card">' +
+    '<label class="fl">Paste your LinkedIn profile</label>' +
+    '<p class="xs mut" style="margin:2px 0 8px">Open your LinkedIn profile, click <b>See more</b> on every section so nothing is collapsed, then press <b>Ctrl+A</b> and <b>Ctrl+C</b> and paste it below. This is the primary, most accurate input.</p>' +
+    '<textarea id="profileGapInput" rows="14" oninput="state.profileGapText=this.value" placeholder="Paste your full LinkedIn profile text here...">' +
+    esc(state.profileGapText) +
+    "</textarea>" +
+    '<label class="fl" style="margin-top:14px">Optional: Add a Screenshot for Visual Feedback</label>' +
+    '<p class="xs mut" style="margin:2px 0 8px">Upload a LinkedIn profile screenshot if you also want feedback on visual elements such as your profile photo, banner, and overall profile presentation. Click, drag & drop, or press Ctrl+V to paste it.</p>' +
+    '<div class="upload-dropzone" id="profileGapDropzone" style="padding:18px" onclick="document.getElementById(\'profileGapFileInput\').click()">' +
+    (state.profileGapShotUrl
+      ? '<img src="' +
+        esc(state.profileGapShotUrl) +
+        '" alt="Screenshot preview" style="max-width:100%;max-height:160px;border-radius:8px">'
+      : '<div class="up-icon" style="font-size:26px;margin-bottom:4px">🖼</div><div class="sm">Click, drop, or paste (Ctrl+V) a screenshot</div>') +
+    '<input type="file" id="profileGapFileInput" accept="image/*" onchange="handleProfileGapFileSelect(event)">' +
+    "</div>" +
+    (state.profileGapShotUrl
+      ? '<div class="gap" style="margin-top:8px"><button class="btn g xs" onclick="clearProfileGapShot()">Remove screenshot</button></div>'
+      : "") +
+    '<button class="btn p" style="width:100%;justify-content:center;margin-top:14px" onclick="runProfileGapAnalysis()"' +
+    (state.profileGapAnalyzing ? " disabled" : "") +
+    ">" +
+    (state.profileGapAnalyzing
+      ? '<span class="spinner"></span> Analyzing Profile...'
+      : "🔎 Analyze & Find Gaps") +
+    "</button>" +
+    "</div>";
+
+  var rightCol = state.profileGapAnalyzing
+    ? '<div class="card"><div class="genload"><div class="orbit"><div class="ring a"></div><div class="ring b"></div><div class="ring c"></div></div><div class="msg">Reading headline, about, experience & skills</div></div></div>'
+    : state.profileGapResult
+      ? renderProfileGapReport(state.profileGapResult)
+      : '<div class="card"><div class="empty">Paste your profile text, then hit <b>Analyze & Find Gaps</b> to see scores, priorities, and fixes.</div></div>';
+
+  return (
+    head(
+      "LinkedIn Profile Gap Analyzer",
+      "Paste your LinkedIn profile to get a section by section score, a prioritized action list, personalized fixes, and an optimized profile preview you can copy.",
+    ) +
+    '<div class="g2">' +
+    leftCol +
+    "<div>" +
+    rightCol +
+    "</div></div>"
+  );
+}
+
+function renderProfileGapReport(res) {
+  if (!res || res.ok === false) {
+    return (
+      '<div class="card"><div class="empty">' +
+      esc((res && res.error) || "Could not analyze this profile.") +
+      "</div></div>"
+    );
+  }
+
+  var s = res.sectionScores || {};
+  var hasScores = res.overallScore !== null && res.overallScore !== undefined;
+  var overallCls = hasScores ? scoreTierClass(res.overallScore, 100) : "mid";
+
+  var scoreTiles = [
+    "headline",
+    "about",
+    "experience",
+    "skills",
+    "featured",
+    "recommendations",
+  ]
+    .map(function (k) {
+      var v = s[k];
+      var cls = v === undefined || v === null ? "mid" : scoreTierClass(v, 10);
+      var fix = FIX_ACTIONS[k];
+      var loading = state.profileGapFixLoading && state.profileGapFixLoading[k];
+      return (
+        '<div class="card" style="text-align:center">' +
+        '<div class="score-badge ' +
+        cls +
+        '" style="width:40px;height:40px;font-size:14px">' +
+        (v === undefined || v === null ? "-" : v) +
+        '<span style="font-size:9px;font-weight:600">/10</span></div>' +
+        '<div class="xs mut" style="margin-top:6px">' +
+        esc(SECTION_LABELS[k]) +
+        "</div>" +
+        '<button class="btn g xs" style="margin-top:8px;width:100%;justify-content:center" onclick="runProfileGapFix(\'' +
+        k +
+        "')\"" +
+        (loading ? " disabled" : "") +
+        ">" +
+        (loading
+          ? '<span class="spinner"></span>'
+          : fix.icon + " " + esc(fix.label)) +
+        "</button>" +
+        "</div>"
+      );
+    })
+    .join("");
+
+  var scoresHTML = hasScores
+    ? '<div class="card" style="text-align:center;margin-bottom:14px"><div class="score-badge ' +
+      overallCls +
+      '" style="width:64px;height:64px;font-size:22px;margin:0 auto">' +
+      res.overallScore +
+      '</div><div class="xs mut" style="margin-top:8px">Overall LinkedIn Profile Score: ' +
+      res.overallScore +
+      "/100</div></div>" +
+      '<div class="g3" style="margin-bottom:14px">' +
+      scoreTiles +
+      "</div>"
+    : "";
+
+  function itemsByPriority(items) {
+    var order = { high: 0, medium: 1, low: 2 };
+    return (items || []).slice().sort(function (a, b) {
+      return (order[a.priority] || 1) - (order[b.priority] || 1);
+    });
+  }
+
+  function renderIssueRow(it, showDetail) {
+    var pm = priorityMeta(it.priority);
+    return (
+      '<div style="padding:8px 0;border-bottom:1px solid var(--line)">' +
+      '<div class="flexb"><div class="sm" style="font-weight:600">' +
+      pm.icon +
+      " " +
+      esc(SECTION_LABELS[it.section] || it.section) +
+      ": " +
+      esc(it.label) +
+      '</div><span class="pill ' +
+      pm.cls +
+      '">' +
+      pm.label +
+      "</span></div>" +
+      (showDetail && it.detail
+        ? '<div class="xs mut" style="margin-top:3px">' +
+          esc(it.detail) +
+          "</div>"
+        : "") +
+      "</div>"
+    );
+  }
+
+  var missingHTML = (res.missing || []).length
+    ? '<div class="card" style="border-left:4px solid var(--red);background:rgba(248,113,113,.06)"><div class="fm bad">⚠ Missing</div>' +
+      itemsByPriority(res.missing)
+        .map(function (m) {
+          return renderIssueRow(m, false);
+        })
+        .join("") +
+      "</div>"
+    : '<div class="card" style="border-left:4px solid var(--emerald);background:rgba(52,211,153,.04)"><div class="fm acc">✓ Nothing Missing</div><p class="sm mut" style="margin:0">Every key section was found on the profile.</p></div>';
+
+  var improveHTML = (res.needsImprovement || []).length
+    ? '<div class="card" style="border-left:4px solid var(--amber);background:rgba(251,191,36,.05)"><div class="fm" style="color:var(--amber)">✎ Needs Improvement</div>' +
+      itemsByPriority(res.needsImprovement)
+        .map(function (m) {
+          return renderIssueRow(m, true);
+        })
+        .join("") +
+      "</div>"
+    : "";
+
+  var strengthsHTML = (res.strengths || []).length
+    ? '<div class="card" style="border-left:4px solid var(--emerald);background:rgba(52,211,153,.04)"><div class="fm acc">✓ Strengths</div>' +
+      (res.strengths || [])
+        .map(function (st) {
+          return (
+            '<div class="flag" style="color:var(--emerald)">✓ ' +
+            esc(SECTION_LABELS[st.section] || st.section) +
+            ": " +
+            esc(st.label) +
+            (st.detail ? " (" + esc(st.detail) + ")" : "") +
+            "</div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    : "";
+
+  var ai = res.aiReview;
+  var aiHTML = "";
+  if (ai) {
+    var recsHTML = (ai.personalizedRecommendations || [])
+      .map(function (r) {
+        var pm = priorityMeta(r.priority);
+        return (
+          '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="xs" style="font-weight:600">' +
+          pm.icon +
+          " " +
+          esc(SECTION_LABELS[r.section] || r.section) +
+          '</div><div class="sm mut" style="margin-top:2px">' +
+          esc(r.text || "") +
+          "</div></div>"
+        );
+      })
+      .join("");
+    aiHTML =
+      '<div class="card" style="border-left:4px solid var(--teal)"><div class="fm teal">✦ Claude Personalized Review</div>' +
+      (ai.overallSummary
+        ? '<p class="sm mut">' + esc(ai.overallSummary) + "</p>"
+        : "") +
+      (recsHTML
+        ? '<div class="xs mut" style="margin:8px 0 4px">PERSONALIZED RECOMMENDATIONS</div>' +
+          recsHTML
+        : "") +
+      (ai.visualNotes
+        ? '<div class="xs mut" style="margin-top:10px">VISUAL NOTES</div><div class="box sm">' +
+          esc(ai.visualNotes) +
+          "</div>"
+        : "") +
+      "</div>";
+  }
+
+  var previewHTML = renderOptimizedPreview();
+
+  return (
+    scoresHTML +
+    missingHTML +
+    improveHTML +
+    strengthsHTML +
+    aiHTML +
+    previewHTML
+  );
+}
+
+function genericTemplateNote(fix) {
+  if (!fix || fix.aiGenerated !== false) return "";
+  return '<div class="xs" style="color:var(--amber);margin-top:4px">⚠ Generic template, not personalized. Connect the Claude API key in Settings for a rewrite based on your real profile.</div>';
+}
+
+function renderOptimizedPreview() {
+  var f = state.profileGapFixes || {};
+  var any =
+    f.headline ||
+    f.about ||
+    f.experience ||
+    f.skills ||
+    f.featured ||
+    f.recommendations;
+
+  var rows = "";
+
+  if (f.headline && f.headline.headlines) {
+    rows +=
+      '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">RECOMMENDED HEADLINES</div><button class="btn g xs" onclick="copyProfileGapFix(\'headline\')">Copy</button></div>' +
+      genericTemplateNote(f.headline) +
+      f.headline.headlines
+        .map(function (h) {
+          return (
+            '<div class="box sm" style="margin-top:6px">' + esc(h) + "</div>"
+          );
+        })
+        .join("") +
+      "</div>";
+  }
+  if (f.about && f.about.about) {
+    rows +=
+      '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">RECOMMENDED ABOUT SECTION</div><button class="btn g xs" onclick="copyProfileGapFix(\'about\')">Copy</button></div>' +
+      genericTemplateNote(f.about) +
+      '<div class="box sm pre" style="margin-top:6px">' +
+      esc(f.about.about) +
+      "</div></div>";
+  }
+  if (f.experience && f.experience.experience) {
+    rows +=
+      '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">IMPROVED EXPERIENCE DESCRIPTIONS</div><button class="btn g xs" onclick="copyProfileGapFix(\'experience\')">Copy</button></div>' +
+      genericTemplateNote(f.experience) +
+      '<div class="box sm pre" style="margin-top:6px">' +
+      esc(f.experience.experience) +
+      "</div></div>";
+  }
+  if (f.skills && f.skills.skills) {
+    rows +=
+      '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">SUGGESTED SKILLS</div><button class="btn g xs" onclick="copyProfileGapFix(\'skills\')">Copy</button></div>' +
+      '<div class="box sm" style="margin-top:6px">' +
+      esc(f.skills.skills.join(" · ")) +
+      "</div></div>";
+  }
+  if (f.featured && f.featured.ideas) {
+    rows +=
+      '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">FEATURED SECTION IDEAS</div><button class="btn g xs" onclick="copyProfileGapFix(\'featured\')">Copy</button></div>' +
+      f.featured.ideas
+        .map(function (i) {
+          return '<div class="flag warn">• ' + esc(i) + "</div>";
+        })
+        .join("") +
+      "</div>";
+  }
+  if (f.recommendations && f.recommendations.whoToAsk) {
+    rows +=
+      '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">WHO TO ASK FOR A RECOMMENDATION</div><button class="btn g xs" onclick="copyProfileGapFix(\'recommendations\')">Copy</button></div>' +
+      f.recommendations.whoToAsk
+        .map(function (w) {
+          return '<div class="flag warn">• ' + esc(w) + "</div>";
+        })
+        .join("") +
+      (f.recommendations.howToAsk
+        ? '<div class="xs mut" style="margin-top:6px">' +
+          esc(f.recommendations.howToAsk) +
+          "</div>"
+        : "") +
+      "</div>";
+  }
+
+  if (!any) {
+    return (
+      '<div class="card"><div class="fm">Your Optimized LinkedIn Profile</div>' +
+      '<p class="sm mut" style="margin:0">Use the fix buttons above each score to generate a better headline, About section, experience descriptions, skills, Featured ideas, and recommendation targets. They will appear here, ready to copy.</p></div>'
+    );
+  }
+
+  return (
+    '<div class="card"><div class="flexb" style="margin-bottom:8px"><div class="fm">Your Optimized LinkedIn Profile</div><button class="btn p xs" onclick="copyProfileGapAll()">Copy All</button></div>' +
+    rows +
+    "</div>"
+  );
+}
+
 /* ---------------- PROFILE ---------------- */
 function tProfile() {
   return (

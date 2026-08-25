@@ -1,7 +1,3 @@
-// ============================================================
-// js/components.js  -  Reusable UI Components & Form Fields
-// ============================================================
-
 function head(title, subtitle) {
   return (
     '<h2 class="h">' +

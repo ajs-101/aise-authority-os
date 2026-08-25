@@ -1,7 +1,3 @@
-// ============================================================
-// js/utils.js  -  DOM, LocalStorage, Escaping, Toast & File Utilities
-// ============================================================
-
 function $(id) {
   return document.getElementById(id);
 }

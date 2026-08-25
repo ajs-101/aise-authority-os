@@ -1,9 +1,3 @@
-// ============================================================
-// profiles.js  (BACKEND ONLY - never sent to the browser)
-// Six voice profiles, company knowledge, compliance rules,
-// and login credentials. Imported by the functions.
-// ============================================================
-
 const COMPANIES = {
   aise: {
     name: "AI Search Engineers",

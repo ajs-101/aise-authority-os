@@ -1,55 +1,44 @@
-// ============================================================
-// generate.js  -  the engine.
-// Writes LinkedIn posts in each person's voice with a strong
-// human, non AI feel, a real hook, and a chosen post type.
-// Calls Claude with the hidden key. Supports an avoid list so
-// weekly batches never repeat.
-// ============================================================
-
 const { PROFILES, COMPLIANCE } = require("./profiles");
 const { getCompany } = require("./utils/company");
 
 const ALLOWED_MODELS = {
   "claude-sonnet-4-6": "claude-sonnet-4-6",
   "claude-haiku-4-5": "claude-haiku-4-5-20251001",
-  "claude-opus-4-8": "claude-opus-4-8"
+  "claude-opus-4-8": "claude-opus-4-8",
 };
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 const FUNNEL_MEANING = {
   TOFU: "Top of funnel. Educate and create awareness. No pitch. Pure value.",
   MOFU: "Middle of funnel. Build trust and show how it works. Frameworks and proof of thinking.",
-  BOFU: "Bottom of funnel. Soft conversion. Invite a conversation, an audit, or a call without being pushy."
+  BOFU: "Bottom of funnel. Soft conversion. Invite a conversation, an audit, or a call without being pushy.",
 };
 
 const LENGTH_MEANING = {
   short: "Short. Four to seven short lines. Every line earns its place.",
-  standard: "Standard. Roughly eight to fourteen short lines with white space between thoughts.",
-  long: "Long. A deeper post that still reads fast because the lines stay short and the ideas keep moving."
+  standard:
+    "Standard. Roughly eight to fourteen short lines with white space between thoughts.",
+  long: "Long. A deeper post that still reads fast because the lines stay short and the ideas keep moving.",
 };
 
 // ---- POST TYPES. Each is a real, distinct structure, not just a label. ----
 const POST_TYPES = {
-  auto:
-    "Choose the single best structure for this topic and audience. Pick the one that would actually stop the scroll and pull comments, then commit to it fully.",
+  auto: "Choose the single best structure for this topic and audience. Pick the one that would actually stop the scroll and pull comments, then commit to it fully.",
   contrarian:
     "Contrarian take. Open by naming a belief most people in this space hold, then flip it in the very next line. Spend the post defending the flip with plain reasoning and a concrete example. Do not hedge. Take the position and hold it. End by inviting people who disagree to say so.",
-  pain:
-    "Pain point story. Open inside the reader's frustration, in their own plain words, the way they would actually describe it to a friend. Name the cost of that problem. Then show the shift, what changes when it is done right. Keep the focus on the reader, not on you. The reader should think, that is literally me.",
+  pain: "Pain point story. Open inside the reader's frustration, in their own plain words, the way they would actually describe it to a friend. Name the cost of that problem. Then show the shift, what changes when it is done right. Keep the focus on the reader, not on you. The reader should think, that is literally me.",
   framework:
     "Framework or how it works. Teach the mechanism behind the topic. Break it into clear steps or signals, each on its own line, each specific. The reader should finish feeling they understand something they did not before, and that you clearly know it cold.",
   lesson:
     "Personal lesson. Use I or we. Tell a short, real, specific moment or realization from the work, then pull one clear principle out of it for the reader to use. Concrete details make it believable. No humble bragging, no fake vulnerability.",
-  myth:
-    "Myth versus reality. State a common myth flatly in the first line. Say plainly that it is wrong. Then give the real picture with a specific reason it holds up. Sharp, confident, useful.",
+  myth: "Myth versus reality. State a common myth flatly in the first line. Say plainly that it is wrong. Then give the real picture with a specific reason it holds up. Sharp, confident, useful.",
   observation:
     "Observation or trend. Point at something quietly shifting in how people search, buy, or get recommended, that most have not clocked yet. Make the reader feel early to it. Ground it in something concrete, not vague futurism.",
   prediction:
     "Bold prediction. Make one specific, falsifiable claim about where this is heading. Give the reasoning in a few tight lines. Confident, not hype. Invite people to agree or push back.",
-  tips:
-    "Quick tips or checklist. Give a tight list of specific, do it today actions. No fluff between them. Each line is a real tactic the reader could apply within the hour.",
+  tips: "Quick tips or checklist. Give a tight list of specific, do it today actions. No fluff between them. Each line is a real tactic the reader could apply within the hour.",
   question:
-    "Question led. Open with a sharp, specific question the reader has actually wondered about. Explore it honestly, give your real view, and leave the thread genuinely open so people want to answer in the comments."
+    "Question led. Open with a sharp, specific question the reader has actually wondered about. Explore it honestly, give your real view, and leave the thread genuinely open so people want to answer in the comments.",
 };
 
 // ---- The anti AI, human voice rulebook. This is the core of the upgrade. ----
@@ -158,7 +147,11 @@ Return ONLY valid JSON, no preamble, no markdown code fences, in this exact shap
 
 function safeParse(text) {
   let t = String(text || "").trim();
-  t = t.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```\s*$/, "").trim();
+  t = t
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/, "")
+    .replace(/```\s*$/, "")
+    .trim();
   const first = t.indexOf("{");
   const last = t.lastIndexOf("}");
   if (first >= 0 && last > first) t = t.slice(first, last + 1);
@@ -171,14 +164,21 @@ function safeParse(text) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ ok: false, error: "Method not allowed" }) };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ ok: false, error: "Method not allowed" }),
+    };
   }
 
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ ok: false, error: "API key not configured. Set ANTHROPIC_API_KEY in Netlify environment variables." })
+      body: JSON.stringify({
+        ok: false,
+        error:
+          "API key not configured. Set ANTHROPIC_API_KEY in Netlify environment variables.",
+      }),
     };
   }
 
@@ -186,12 +186,18 @@ exports.handler = async (event) => {
   try {
     req = JSON.parse(event.body || "{}");
   } catch (e) {
-    return { statusCode: 400, body: JSON.stringify({ ok: false, error: "Bad request body" }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ ok: false, error: "Bad request body" }),
+    };
   }
 
   const p = PROFILES[req.personId];
   if (!p) {
-    return { statusCode: 400, body: JSON.stringify({ ok: false, error: "Unknown profile" }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ ok: false, error: "Unknown profile" }),
+    };
   }
   const company = getCompany(p.company);
 
@@ -209,22 +215,26 @@ exports.handler = async (event) => {
       headers: {
         "x-api-key": key,
         "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
+        "content-type": "application/json",
       },
       body: JSON.stringify({
         model: model,
         max_tokens: 1500,
         temperature: 1,
         system: buildSystemPrompt(p, company),
-        messages: [{ role: "user", content: buildUserPrompt(req) }]
-      })
+        messages: [{ role: "user", content: buildUserPrompt(req) }],
+      }),
     });
 
     const data = await resp.json();
 
     if (!resp.ok) {
-      const msg = (data && data.error && data.error.message) || "Claude API error";
-      return { statusCode: 502, body: JSON.stringify({ ok: false, error: msg }) };
+      const msg =
+        (data && data.error && data.error.message) || "Claude API error";
+      return {
+        statusCode: 502,
+        body: JSON.stringify({ ok: false, error: msg }),
+      };
     }
 
     const text = (data.content || [])
@@ -233,14 +243,27 @@ exports.handler = async (event) => {
       .join("\n");
 
     const parsed = safeParse(text);
-    const result = parsed || { hooks: [], main: text, alt: "", hashtags: "", imagePrompt: "", pinnedComment: "" };
+    const result = parsed || {
+      hooks: [],
+      main: text,
+      alt: "",
+      hashtags: "",
+      imagePrompt: "",
+      pinnedComment: "",
+    };
 
     return {
       statusCode: 200,
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ok: true, result: result, model: model })
+      body: JSON.stringify({ ok: true, result: result, model: model }),
     };
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ ok: false, error: String(err && err.message || err) }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        ok: false,
+        error: String((err && err.message) || err),
+      }),
+    };
   }
 };

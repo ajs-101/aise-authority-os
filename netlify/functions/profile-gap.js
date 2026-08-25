@@ -142,8 +142,128 @@ const KEYWORD_LIBRARY = [
 
 const PRIORITY = { HIGH: "high", MEDIUM: "medium", LOW: "low" };
 
+// ============================================================
+// DATA NORMALIZATION: Remove noise from messy LinkedIn dumps
+// ============================================================
+// When users Ctrl+A / Ctrl+C from LinkedIn, they often get
+// significant noise: nav bar, ads, duplicates, excessive
+// whitespace, and non-standard section headers. This normalization
+// pipeline cleans the input to ensure accurate analysis.
+// ============================================================
+
+// LinkedIn UI and ad patterns that commonly appear in Ctrl+A/Ctrl+C dumps
+const LINKEDIN_UI_PATTERNS = [
+  /^\s*Ad\s*$/i,
+  /^\s*Suggested\s*$/i,
+  /^\s*Premium\s+feature/i,
+  /^\s*See who's\s+viewed/i,
+  /^\s*People\s+also\s+(viewed|liked)/i,
+  /^\s*See all/i,
+  /^\s*Show more|Show less/i,
+  /^\s*View profile|Follow/i,
+  /^\s*Message|Connect|Save/i,
+  /^\s*Dismiss/i,
+  /^\s*Report\s+this(?: profile)?/i,
+  /^\s*Block\s+this\s+member/i,
+  /^\s*Turn\s+on\s+notifications/i,
+  /^\s*Undo/i,
+  /^\s*Like/i,
+  /^\s*Comment/i,
+  /^\s*Share/i,
+  /^\s*See.*connections?/i,
+  /^\s*\d+\s+(followers?|connections?|posts?)/i,
+  /^\s*•\s*(followers?|connections?|posts?)/i,
+  /^\s*You have \d+ new/i,
+];
+
+/**
+ * normalizeProfileData: 6-stage normalization pipeline for messy LinkedIn dumps
+ *
+ * When users Ctrl+A / Ctrl+C from LinkedIn, they get noise: nav bar, ads,
+ * duplicates, excessive whitespace, and non-standard headers. This function
+ * cleans the input to ensure accurate profile analysis.
+ *
+ * Pipeline stages:
+ * 1. Remove empty lines and LinkedIn UI patterns (ads, buttons, counters)
+ * 2. Collapse excessive whitespace into single newlines
+ * 3. De-duplicate adjacent identical lines (case-insensitive)
+ * 4. Normalize section header variations (e.g., "Work Experience" -> "experience")
+ * 5. Preserve actual profile content as-is
+ * 6. Return cleaned text ready for section extraction
+ *
+ * Example transformation:
+ * Input: "Search\nHome\n\nJohn Smith\nAd\n\nAbout\nI build things"
+ * Output: "John Smith\nAbout\nI build things"
+ */
+function normalizeProfileData(text) {
+  let lines = String(text || "").split("\n");
+
+  // Stage 1: Remove empty lines and lines matching LinkedIn UI patterns
+  lines = lines.filter((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    return !LINKEDIN_UI_PATTERNS.some((pattern) => pattern.test(trimmed));
+  });
+
+  // Stage 2-3: Collapse multiple consecutive whitespace into single newlines
+  const collapsed = [];
+  let lastNonEmpty = -2;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed) {
+      collapsed.push(lines[i]);
+      lastNonEmpty = i;
+    }
+  }
+
+  // Stage 3: De-duplicate adjacent identical lines (case-insensitive)
+  // Handles cases where user expanded sections multiple times
+  const deduped = [];
+  const lastLower = {};
+  collapsed.forEach((line) => {
+    const lower = line.trim().toLowerCase();
+    if (lower !== lastLower.value) {
+      deduped.push(line);
+      lastLower.value = lower;
+    }
+  });
+
+  // Stage 4: Normalize section headers to canonical forms
+  // Handles variations like "Work Experience", "Professional Experience", etc.
+  const normalized = deduped.map((line) => {
+    const trimmed = line.trim();
+    const lower = trimmed.toLowerCase();
+
+    // Check if this is a section header and normalize it
+    for (const header of SECTION_HEADERS) {
+      if (lower === header) {
+        return header; // Return the canonical form
+      }
+    }
+
+    // Handle common variations
+    if (/^(work\s+)?experience/i.test(lower)) return "experience";
+    if (/^(professional\s+)?experience/i.test(lower)) return "experience";
+    if (/^(formal\s+)?education/i.test(lower)) return "education";
+    if (/^(licenses?|certifications?|certificates)/i.test(lower))
+      return "licenses & certifications";
+    if (/^(my\s+)?skills?/i.test(lower)) return "skills";
+    if (/^(professional\s+)?headline/i.test(lower)) return "headline";
+    if (/^(about\s+(me|yourself))/i.test(lower)) return "about";
+    if (/^(recommendations?|testimonials?)/i.test(lower))
+      return "recommendations";
+
+    return line; // Not a header, return as-is
+  });
+
+  // Stage 5-6: Join and return cleaned text
+  return normalized.join("\n");
+}
+
 function splitSections(text) {
-  const lines = String(text || "").split("\n");
+  // First, normalize the raw pasted data
+  const normalized = normalizeProfileData(text);
+  const lines = normalized.split("\n");
   const sections = { header: [] };
   let current = "header";
   for (let i = 0; i < lines.length; i++) {
@@ -178,29 +298,99 @@ const LINKEDIN_CHROME_WORDS = [
   "network",
   "for business",
   "try premium for",
+  "premium",
+  "learning",
 ];
 
+const CHROME_PATTERNS = [
+  /^\d+$/, // bare counters like "13"
+  /^\d+\s*notifications?$/, // "5 notifications"
+  /^try premium/i,
+  /^see (all|who)/i,
+  /^message|connect|save|follow|endorse|recommend/i,
+  /^congratulations/i,
+  /^unfollow|unfriend/i,
+];
+
+/**
+ * isChromeLine: Detect if a line is LinkedIn navigation/UI chrome
+ * not actual profile content.
+ *
+ * Detects:
+ * - Navigation items (Home, Jobs, Messaging, etc.)
+ * - UI counters (bare numbers, "5 notifications", etc.)
+ * - Action buttons (Message, Connect, Save, Follow, etc.)
+ * - Empty lines
+ *
+ * Used by extractHeadline() and normalizeProfileData() to filter
+ * out nav bar noise that often gets pasted with Ctrl+A/Ctrl+C.
+ */
 function isChromeLine(l) {
   const t = l.trim().toLowerCase();
   if (!t) return true;
-  if (/^\d+$/.test(t)) return true; // bare counters like "13"
-  if (/^\d+\s*notifications?$/.test(t)) return true;
-  return LINKEDIN_CHROME_WORDS.indexOf(t) !== -1;
+  if (LINKEDIN_CHROME_WORDS.indexOf(t) !== -1) return true;
+  return CHROME_PATTERNS.some((p) => p.test(t));
 }
 
+/**
+ * extractHeadline: Intelligently extract the LinkedIn headline from noisy header lines
+ *
+ * Improved extraction handles:
+ * - Filters out chrome lines (nav bar items) early
+ * - Skips metadata (connection counts, endorsements, contact info)
+ * - Enforces reasonable length (8-250 chars, matching LinkedIn's limit)
+ * - Looks for role indicators and keywords (at, CEO, engineer, etc.)
+ * - Recognizes headline format patterns (•, |, separators)
+ * - Falls back to first reasonable line if no obvious headline found
+ *
+ * This prevents false positives where "Search" or "Home" from the nav bar
+ * were incorrectly identified as the profile headline.
+ *
+ * Example inputs/outputs:
+ * - ["home", "my network", "john smith"] → "john smith" (chrome filtered)
+ * - ["john smith", "senior engineer at acme"] → "senior engineer at acme"
+ * - ["ad", "product manager | ai specialist"] → "product manager | ai specialist"
+ */
 function extractHeadline(headerLines) {
-  const nonEmpty = (headerLines || []).map((l) => l.trim()).filter(Boolean);
+  const nonEmpty = (headerLines || [])
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .filter((l) => !isChromeLine(l)); // Filter out chrome lines early
+
   if (!nonEmpty.length) return "";
-  for (let i = 1; i < Math.min(nonEmpty.length, 8); i++) {
+
+  // Look for the headline: typically a line with 8-250 characters
+  // that describes a role/title and value proposition
+  for (let i = 0; i < nonEmpty.length; i++) {
     const l = nonEmpty[i];
-    if (/connections?\s*$/i.test(l)) continue;
-    if (/^contact info$/i.test(l)) continue;
-    if (/^[•·]?\s*(1st|2nd|3rd)\b/i.test(l)) continue;
-    if (/^\d+\+?\s*(followers|connections)/i.test(l)) continue;
-    if (isChromeLine(l)) continue;
-    if (l.length < 4) continue;
-    return l;
+    if (/connections?\s*$/i.test(l)) continue; // Skip metadata
+    if (/^contact\s+info$/i.test(l)) continue; // Skip metadata
+    if (/^[•·]?\s*(1st|2nd|3rd)\b/i.test(l)) continue; // Skip connection badges
+    if (/^\d+\+?\s*(followers|connections)/i.test(l)) continue; // Skip metrics
+    if (/^\d+\s*(endorsements?|recommendations?)/i.test(l)) continue; // Skip metrics
+    if (/^open to work/i.test(l)) continue; // Skip status badge
+    if (/^linkedin member/i.test(l)) continue; // Skip label
+    if (l.length < 8) continue; // Too short
+    if (l.length > 250) continue; // LinkedIn headlines have a 220-char limit
+
+    // If it looks like a headline (contains role indicators or format patterns)
+    if (
+      /\b(at|CEO|founder|manager|engineer|designer|director|specialist)\b/i.test(
+        l,
+      ) ||
+      l.includes("•") ||
+      l.includes(" | ")
+    ) {
+      return l;
+    }
   }
+
+  // Fallback: return first line that's not chrome and is reasonable length
+  for (let i = 0; i < nonEmpty.length; i++) {
+    const l = nonEmpty[i];
+    if (l.length >= 8 && l.length <= 250) return l;
+  }
+
   return "";
 }
 

@@ -1,7 +1,3 @@
-// ============================================================
-// data.js  -  frontend display data only. NO passwords here.
-// ============================================================
-
 window.UI = {
   funnels: [
     { key: "TOFU", label: "Top of funnel, educate" },
@@ -79,7 +75,7 @@ window.UI = {
 };
 
 // Order shown on the login wall. CEO first.
-window.PEOPLE_ORDER = ["david", "dacia", "aman", "ahmed", "aasheen", "marium", "abdul"];
+window.PEOPLE_ORDER = ["david", "dacia", "aman", "ahmed", "aasheen", "marium"];
 
 // Display only. The server returns the live profile on login.
 window.PEOPLE_DISPLAY = {
@@ -133,7 +129,7 @@ window.PEOPLE_DISPLAY = {
   },
   abdul: {
     name: "Abdul Rehman",
-    title: "AI Automation Developer",
+    title: "AI AutomationDeveloper",
     company: "AI Search Engineers",
     initials: "AR",
     accent: "blue",

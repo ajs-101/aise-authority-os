@@ -74,12 +74,12 @@ const PROFILES = {
     password: "Deadman",
     role: "member",
     name: "Aman Jamil",
-    title: "Founder",
-    company: "aise",
+    title: "Chief Operating Officer",
+    company: "AI Search Engineers",
     headline:
       "Helping Professionals Become the Trusted Answer Across ChatGPT, Gemini and Google AI Search | Founder | AEO | GEO | Digital Authority",
     about:
-      "Founder focused on making real expertise legible to AI search. Helps doctors, lawyers, founders, and business owners become the answer that AI recommends through clarity, structure, media authority, and credible third party signals.",
+      "COO focused on making real expertise legible to AI search. Helps doctors, lawyers, founders, and business owners become the answer that AI recommends through clarity, structure, media authority, and credible third party signals.",
     audience: "doctors, lawyers, founders, and business owners",
     fingerprint:
       "Calm, educational, zero hype. Opens with a sharp scenario or a quiet contrarian observation, often in two short lines. Lots of white space. Core themes are ranked versus recommended, alignment, corroboration, and signals. Uses light, sparing emoji such as a single magnifier or robot. Soft non pushy CTAs, often a free AI Visibility Audit or Comment audit. Never aggressive, always thoughtful.",
@@ -132,28 +132,6 @@ const PROFILES = {
       "A title is a temporary role.\nCharacter is a permanent record.\n\nPositions fade faster than we think.\nTitles last as long as the signature does.\nPower lasts as long as the mandate does.\nOne decision. One restructuring. One updated org chart.\nAnd everything that felt permanent yesterday suddenly is not yours anymore.\nBut the way you treat people outlasts your name on the door.\nReputation is not built when you get the role.\nIt is built in the small moments no one tracks.\nWhat do you think people will remember when the title is gone.",
       "Most people still think visibility starts with Google.\nIt does not anymore.\n\nToday, clients are asking AI tools like ChatGPT and Gemini who to trust before they ever visit a website.\nAnd AI usually gives one answer.\nIf your brand is not that answer, you are invisible at the exact moment decisions are made.\nThis is why Answer Engine Optimization matters.\nNot hype. Not SEO repackaged.\nBut building the signals AI systems actually use to understand credibility.\nThe question is whether your brand is keeping up.",
       "Most agencies focus on visibility.\nWe focus on authority.\n\nAnyone can generate clicks, impressions, and empty attention.\nVery few can build credibility, trust, and recognition that actually moves business forward.\nWe do not chase noise. We engineer presence.\nData driven PR. Authority that compounds and converts.\nYour story should lead the room, not compete for it.",
-    ],
-  },
-
-  // ---------------- AASHEEN KHAN (Member) ----------------
-  aasheen: {
-    username: "Client Success Executive",
-    password: "Aasheen@AISE",
-    role: "member",
-    name: "Aasheen Khan",
-    title: "Client Success Executive",
-    company: "aise",
-    headline:
-      "Client Success Executive at AI Search Engineers | Cold Outreach, Client Onboarding and Ongoing Project Management",
-    about:
-      "Client Success Executive at AI Search Engineers and Trustpoint Xposure. Sits between the client and the work, running cold outreach, onboarding new accounts, and managing projects through delivery. Sees firsthand what professionals believe about AI search when they first arrive, what they get wrong, and what actually changes once their signals line up. Focused on making the client experience clear, organized, and genuinely useful.",
-    audience:
-      "professionals, founders, and firms exploring AI search visibility for the first time",
-    fingerprint:
-      "Writes from the client facing seat, not the strategist chair. Grounded, warm, and practical. Her strongest angle is what she observes in real conversations, so posts often open with something a client said, a question that keeps coming up in onboarding, or a pattern she notices across accounts. Plain spoken and human, never lecturing and never hypey. Uses the phrase what I keep hearing, or the question I get most. Short clear lines with white space. Ends with a soft question or an open invitation to ask her something. She explains AEO honestly and simply, from the position of someone who watches it land with real people.",
-    samples: [
-      "The question I get most during onboarding.\n\nWill AI actually mention me.\n\nIt is a fair question, and the honest answer is that it depends on what AI can currently verify about you.\n\nMost people are surprised by how little that is. Their expertise is real. It is just scattered across places that do not agree with each other.\n\nOnce the signals line up, the answer changes.\n\nHappy to walk anyone through what that looks like.",
-      "Something I notice with almost every new client.\n\nThey assume the problem is that they need more content.\n\nThen we look at what AI actually says about them, and the gap is not effort. It is clarity.\n\nDifferent bios in different places. A website that says one thing and a profile that says another.\n\nAI has no reason to trust a picture that does not hold together.\n\nWhat would AI say about you today?",
     ],
   },
 

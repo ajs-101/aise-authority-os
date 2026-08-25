@@ -75,15 +75,7 @@ window.UI = {
 };
 
 // Order shown on the login wall. CEO first.
-window.PEOPLE_ORDER = [
-  "david",
-  "dacia",
-  "aman",
-  "ahmed",
-  "aasheen",
-  "marium",
-  "abdul",
-];
+window.PEOPLE_ORDER = ["david", "dacia", "aman", "ahmed", "marium", "abdul"];
 
 // Display only. The server returns the live profile on login.
 window.PEOPLE_DISPLAY = {
@@ -105,7 +97,7 @@ window.PEOPLE_DISPLAY = {
   },
   aman: {
     name: "Aman Jamil",
-    title: "Founder",
+    title: "Chief Operating Officer",
     company: "AI Search Engineers",
     initials: "AJ",
     accent: "emerald",
@@ -118,14 +110,6 @@ window.PEOPLE_DISPLAY = {
     initials: "SA",
     accent: "blue",
     admin: true,
-  },
-  aasheen: {
-    name: "Aasheen Khan",
-    title: "Client Success Executive",
-    company: "AI Search Engineers",
-    initials: "AK",
-    accent: "emerald",
-    admin: false,
   },
   marium: {
     name: "Marium Khurram",

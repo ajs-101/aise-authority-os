@@ -1237,7 +1237,7 @@ function localFixFallback(type, localAnalysis) {
         ? extractedSkills.slice(0, 4).join(", ")
         : "modern web architecture, backend APIs, and system optimization";
 
-    const aboutTemplate = `I build resilient, high-performance systems and turn complex technical requirements into intuitive user experiences.
+    const aboutTemplate = `
 
 As a ${role}, my focus is on clean architecture, speed, and real business impact using ${skillsText}.
 

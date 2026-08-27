@@ -68,9 +68,11 @@ window.UI = {
     "Future of Discovery",
   ],
   models: [
-    { key: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (best balance)" },
-    { key: "claude-haiku-4-5", label: "Claude Haiku 4.5 (fastest)" },
-    { key: "claude-opus-4-8", label: "Claude Opus 4.8 (highest quality)" },
+    { key: "claude-sonnet-5", label: "Sonnet 5 (Most efficient for everyday tasks)" },
+    { key: "claude-haiku-4-5", label: "Haiku 4.5 (Fastest for quick answers)" },
+    { key: "claude-opus-5", label: "Opus 5 (For complex tasks)" },
+    { key: "claude-fable-5", label: "Fable 5 (Requires usage credits)" },
+    { key: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (Default)" },
   ],
 };
 

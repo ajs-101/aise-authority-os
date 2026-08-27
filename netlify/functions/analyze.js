@@ -285,7 +285,7 @@ exports.handler = async (event) => {
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            model: req.model || "claude-sonnet-4-6",
+            model: req.model === "claude-haiku-4-5" ? "claude-3-5-haiku-20241022" : "claude-3-5-sonnet-20241022",
             max_tokens: 1000,
             messages: [
               {

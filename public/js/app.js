@@ -923,6 +923,8 @@ function runProfileGapAnalysis() {
       profileText: state.profileGapText,
       screenshotDataUrl: state.profileGapShotUrl,
       personId: SESSION ? SESSION.personId : "ahmed",
+      model: loadLS("adminModel", "claude-sonnet-4-6"),
+      apiKey: loadLS("anthropicKey", "") || loadLS("apiKey", ""),
     }),
   })
     .then(function (r) {
@@ -1054,6 +1056,8 @@ function runProfileGapFix(kind) {
       type: type,
       profileText: state.profileGapText,
       personId: SESSION ? SESSION.personId : "ahmed",
+      model: loadLS("adminModel", "claude-sonnet-4-6"),
+      apiKey: loadLS("anthropicKey", "") || loadLS("apiKey", ""),
     }),
   })
     .then(function (r) {
@@ -1084,7 +1088,13 @@ function profileGapFixAsText(kind) {
   if (kind === "skills" && f.skills) return f.skills.join(", ");
   if (kind === "featured" && f.ideas) return f.ideas.join("\n");
   if (kind === "recommendations" && f.whoToAsk) {
-    return f.whoToAsk.join("\n") + (f.howToAsk ? "\n\n" + f.howToAsk : "");
+    var items = f.whoToAsk.map(function (w) {
+      if (typeof w === "object" && w !== null) {
+        return (w.relationship || w.role || "") + (w.why ? ": " + w.why : "");
+      }
+      return String(w);
+    });
+    return items.join("\n") + (f.howToAsk ? "\n\n" + f.howToAsk : "");
   }
   return "";
 }

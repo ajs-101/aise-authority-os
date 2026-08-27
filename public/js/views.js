@@ -1219,10 +1219,13 @@ function renderProfileGapReport(res) {
   );
 }
 
-function genericTemplateNote(fix) {
-  if (!fix || fix.aiGenerated !== false) return "";
-  return '<div class="xs" style="color:var(--amber);margin-top:4px">⚠ Generic template, not personalized. Connect the Claude API key in Settings for a rewrite based on your real profile.</div>';
-}
+// function genericTemplateNote(fix) {
+//   if (!fix || fix.aiGenerated !== false) return "";
+//   if (fix.aiError) {
+//     return '<div class="xs" style="color:var(--amber);margin-top:4px">⚠ AI Notice: ' + esc(fix.aiError) + ' (Smart fallback draft shown)</div>';
+//   }
+//   return '<div class="xs" style="color:var(--amber);margin-top:4px">⚠ Smart fallback draft generated from profile signals. Connect the Claude API key in Settings for a full AI rewrite.</div>';
+// }
 
 function renderOptimizedPreview() {
   var f = state.profileGapFixes || {};
@@ -1239,7 +1242,7 @@ function renderOptimizedPreview() {
   if (f.headline && f.headline.headlines) {
     rows +=
       '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">RECOMMENDED HEADLINES</div><button class="btn g xs" onclick="copyProfileGapFix(\'headline\')">Copy</button></div>' +
-      genericTemplateNote(f.headline) +
+      // genericTemplateNote(f.headline) +
       f.headline.headlines
         .map(function (h) {
           return (
@@ -1252,7 +1255,7 @@ function renderOptimizedPreview() {
   if (f.about && f.about.about) {
     rows +=
       '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">RECOMMENDED ABOUT SECTION</div><button class="btn g xs" onclick="copyProfileGapFix(\'about\')">Copy</button></div>' +
-      genericTemplateNote(f.about) +
+      // genericTemplateNote(f.about) +
       '<div class="box sm pre" style="margin-top:6px">' +
       esc(f.about.about) +
       "</div></div>";
@@ -1260,7 +1263,7 @@ function renderOptimizedPreview() {
   if (f.experience && f.experience.experience) {
     rows +=
       '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">IMPROVED EXPERIENCE DESCRIPTIONS</div><button class="btn g xs" onclick="copyProfileGapFix(\'experience\')">Copy</button></div>' +
-      genericTemplateNote(f.experience) +
+      // genericTemplateNote(f.experience) +
       '<div class="box sm pre" style="margin-top:6px">' +
       esc(f.experience.experience) +
       "</div></div>";
@@ -1287,6 +1290,17 @@ function renderOptimizedPreview() {
       '<div style="margin-bottom:12px"><div class="flexb"><div class="xs mut">WHO TO ASK FOR A RECOMMENDATION</div><button class="btn g xs" onclick="copyProfileGapFix(\'recommendations\')">Copy</button></div>' +
       f.recommendations.whoToAsk
         .map(function (w) {
+          if (typeof w === "object" && w !== null) {
+            var rel = w.relationship || w.role || "";
+            var why = w.why ? ": " + w.why : "";
+            return (
+              '<div class="flag warn">• <strong>' +
+              esc(rel) +
+              "</strong>" +
+              esc(why) +
+              "</div>"
+            );
+          }
           return '<div class="flag warn">• ' + esc(w) + "</div>";
         })
         .join("") +

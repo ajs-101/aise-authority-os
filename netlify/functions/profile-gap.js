@@ -1237,9 +1237,7 @@ function localFixFallback(type, localAnalysis) {
         ? extractedSkills.slice(0, 4).join(", ")
         : "modern web architecture, backend APIs, and system optimization";
 
-    const aboutTemplate = `
-
-As a ${role}, my focus is on clean architecture, speed, and real business impact using ${skillsText}.
+    const aboutTemplate = `As a ${role}, my focus is on clean architecture, speed, and real business impact using ${skillsText}.
 
 Core Expertise & Pillars:
 • Architecture & Design: Engineering scalable, maintainable codebase structures designed for reliability.

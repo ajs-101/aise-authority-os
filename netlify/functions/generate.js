@@ -2,16 +2,18 @@ const { PROFILES, COMPLIANCE } = require("./profiles");
 const { getCompany } = require("./utils/company");
 
 const ALLOWED_MODELS = {
-  "claude-sonnet-5": "claude-3-5-sonnet-20241022",
-  "claude-haiku-4-5": "claude-3-5-haiku-20241022",
-  "claude-opus-5": "claude-3-opus-20240229",
-  "claude-fable-5": "claude-3-5-sonnet-20241022",
-  "claude-sonnet-4-6": "claude-3-5-sonnet-20241022",
-  "claude-opus-4-8": "claude-3-opus-20240229",
-  "claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
-  "claude-3-5-haiku": "claude-3-5-haiku-20241022",
+  "claude-sonnet-5": "claude-sonnet-5",
+  "claude-haiku-4-5": "claude-haiku-4-5-20251001",
+  "claude-opus-5": "claude-opus-5",
+  "claude-fable-5": "claude-fable-5",
+  "claude-sonnet-4-6": "claude-sonnet-4-6",
+  "claude-opus-4-8": "claude-opus-4-8",
+  "claude-3-5-sonnet": "claude-sonnet-4-6",
+  "claude-3-5-haiku": "claude-haiku-4-5-20251001",
+  "claude-3-5-sonnet-20241022": "claude-sonnet-4-6",
+  "claude-3-5-haiku-20241022": "claude-haiku-4-5-20251001",
 };
-const DEFAULT_MODEL = "claude-3-5-sonnet-20241022";
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 const FUNNEL_MEANING = {
   TOFU: "Top of funnel. Educate and create awareness. No pitch. Pure value.",
@@ -212,7 +214,7 @@ exports.handler = async (event) => {
   req.length = req.length || "standard";
   req.postType = req.postType || "auto";
 
-  const model = ALLOWED_MODELS[req.model] || ALLOWED_MODELS[DEFAULT_MODEL] || "claude-3-5-sonnet-20241022";
+  const model = ALLOWED_MODELS[req.model] || ALLOWED_MODELS[DEFAULT_MODEL] || req.model || "claude-sonnet-4-6";
 
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {

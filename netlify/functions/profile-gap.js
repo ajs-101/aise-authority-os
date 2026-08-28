@@ -1,23 +1,3 @@
-// ============================================================
-// profile-gap.js  -  LinkedIn Profile Gap & Weakness Analyzer
-// Takes a raw pasted LinkedIn profile (Ctrl+A / Ctrl+C dump)
-// and, optionally, a profile screenshot, and reports concrete
-// gaps and fixes across headline, about, experience, skills,
-// featured and recommendations, each scored out of 10, with an
-// overall score out of 100, split into Missing / Needs
-// Improvement / Strengths, each with a priority level.
-//
-// Also handles the "Fix It" actions (type: fixHeadline,
-// fixAbout, fixExperience, fixSkills, fixFeatured,
-// fixRecommendations) that generate the Optimized Profile
-// Preview content.
-//
-// Local rule based analysis always runs so the base report
-// works with no API key. If ANTHROPIC_API_KEY is set, Claude
-// adds a deeper, personalized review and powers the Fix It
-// actions.
-// ============================================================
-
 const SECTION_HEADERS = [
   "about",
   "experience",
@@ -70,9 +50,6 @@ const AI_BUZZWORDS = [
   "go-getter",
   "results driven",
 ];
-
-// A broad, cross-discipline keyword library used to spot skills a person
-// clearly mentions in About / Experience but has not listed under Skills.
 const KEYWORD_LIBRARY = [
   "React.js",
   "React",
@@ -884,13 +861,16 @@ function parseDataUrl(dataUrl) {
 }
 
 function resolveModelName(model) {
-  if (!model) return "claude-3-5-sonnet-20241022";
+  if (!model) return "claude-sonnet-4-6";
   const m = String(model).toLowerCase();
-  if (m.includes("haiku")) return "claude-3-5-haiku-20241022";
-  if (m.includes("opus")) return "claude-3-opus-20240229";
-  if (m.includes("3-7") || m.includes("3.7"))
-    return "claude-3-7-sonnet-20250219";
-  return "claude-3-5-sonnet-20241022";
+  if (m === "claude-sonnet-5" || m.includes("sonnet-5")) return "claude-sonnet-5";
+  if (m.includes("haiku")) return "claude-haiku-4-5-20251001";
+  if (m.includes("opus-5")) return "claude-opus-5";
+  if (m.includes("opus")) return "claude-opus-4-8";
+  if (m.includes("fable")) return "claude-fable-5";
+  if (m.includes("3-7") || m.includes("3.7")) return "claude-sonnet-4-6";
+  if (m.includes("sonnet-4-6") || m.includes("sonnet-4.6")) return "claude-sonnet-4-6";
+  return "claude-sonnet-4-6";
 }
 
 async function callClaude(key, model, content, maxTokens) {

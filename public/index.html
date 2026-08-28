@@ -70,24 +70,32 @@
 
 <!-- app -->
 <div id="app" class="app" style="display:none">
-  <aside class="side">
+  <aside class="side" id="sidebar">
     <div class="brand">
-      <img src="assets/logo.png" alt="" onerror="this.src='logo.png';this.onerror=function(){this.style.display='none';document.getElementById('brandMk').style.display='flex';}">
-      <div id="brandMk" class="b-mk" style="display:none">AI</div>
-      <div>
-        <span class="b-tt">Authority OS</span>
-        <small>LinkedIn content engine</small>
+      <div class="brand-left">
+        <img src="assets/logo.png" alt="" onerror="this.src='logo.png';this.onerror=function(){this.style.display='none';document.getElementById('brandMk').style.display='flex';}">
+        <div id="brandMk" class="b-mk" style="display:none">AI</div>
+        <div class="b-info">
+          <span class="b-tt">Authority OS</span>
+          <small>LinkedIn content engine</small>
+        </div>
       </div>
+      <button id="sidebarToggleBtn" class="side-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+        <span class="toggle-ic">‹</span>
+      </button>
     </div>
     <div class="user-chip">
       <div class="avatar" id="uAvatar">--</div>
-      <div>
+      <div class="u-info">
         <div class="nm" id="uName">--</div>
         <div class="rl" id="uRole">--</div>
       </div>
     </div>
     <div id="nav"></div>
-    <button class="logout" onclick="doLogout()">Log out</button>
+    <button class="logout" onclick="doLogout()" title="Log out">
+      <span class="ic">⎋</span>
+      <span class="logout-txt">Log out</span>
+    </button>
   </aside>
   <main class="main">
     <div class="topbar" id="topnav"></div>

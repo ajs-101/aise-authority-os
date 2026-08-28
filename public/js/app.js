@@ -1698,13 +1698,15 @@ function startApp() {
       return (
         '<button class="navbtn" data-k="' +
         t[0] +
+        '" title="' +
+        esc(t[1]) +
         '" onclick="go(\'' +
         t[0] +
         '\')"><span class="ic">' +
         t[2] +
-        "</span>" +
-        t[1] +
-        "</button>"
+        '</span><span class="nav-txt">' +
+        esc(t[1]) +
+        "</span></button>"
       );
     })
     .join("");
@@ -1716,14 +1718,28 @@ function startApp() {
         '" onclick="go(\'' +
         t[0] +
         "')\">" +
-        t[1] +
+        esc(t[1]) +
         "</button>"
       );
     })
     .join("");
+
+  if (loadLS("sidebarCollapsed", "0") === "1") {
+    var appEl = $("app");
+    if (appEl) appEl.classList.add("collapsed-sidebar");
+  }
+
   var g = loadLS("gen", null);
   if (g) state.gen = Object.assign(state.gen, g);
   go("dashboard");
+}
+
+function toggleSidebar() {
+  var appEl = $("app");
+  if (!appEl) return;
+  appEl.classList.toggle("collapsed-sidebar");
+  var isCollapsed = appEl.classList.contains("collapsed-sidebar");
+  saveLS("sidebarCollapsed", isCollapsed ? "1" : "0");
 }
 
 function go(t) {
